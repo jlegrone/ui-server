@@ -1,0 +1,40 @@
+name: "Update UI Submodule"
+
+on:
+  workflow_dispatch:
+
+jobs:
+  sync:
+    name: "Update UI submodule"
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.17
+
+      - name: Update Git Sumbodule
+        run: |
+          git pull --recurse-submodules
+          git submodule update --remote --recursive
+
+      - name: Re-build UI
+        run: |
+          make install-ui build-ui
+
+      - name: Commit update
+        run: |
+          git config --global user.name 'Git bot'
+          git config --global user.email 'bot@noreply.github.com'
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+          git commit -am "Update UI submodule" && git push || echo "No changes to commit"
